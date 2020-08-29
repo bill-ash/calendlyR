@@ -1,7 +1,9 @@
-#' calendlyR: Access the calendly API using R.
-#'
+#' calendlyR
 #' Package details...
 #'
-#' Visit the calendly API documentation: \url{https://calendly.stoplight.io/docs/gh/calendly/api-docs/docs/API-Use-Cases.md?srn=gh/calendly/api-docs/docs/API-Use-Cases.md}
+#' @title calendlyR
+#' @description Access the calendly API using R.
+#' @details Visit the calendly API documentation: \url{https://developer.calendly.com/docs/getting-started}
+#' @name calendlyR
 #'
-"_PACKAGE"
+NULL
