@@ -1,0 +1,20 @@
+Package: calendlyR
+Title: API Client
+Version: 0.0.0.9000
+Authors@R: 
+    person(given = "Bill",
+           family = "Ash",
+           role = c("aut", "cre"),
+           email = "ash.william.r@gmail.com"
+           )
+Description: API client for accessing calendly written in R. 
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.1.1
+Suggests: 
+    testthat
+Imports: 
+    httr,
+    magrittr
