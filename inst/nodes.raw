@@ -1,0 +1,1713 @@
+openapi: 3.0.0
+servers:
+  - url: 'https://api.calendly.com'
+info:
+  description: >
+    Leverage Calendly’s API for a custom Calendly integration within your
+    product.  
+      
+    ---
+      
+    Calendly has a published API that any Calendly User can use.  
+      
+    To use Calendly's API, you'll need to register as a developer and create an
+    OAuth application.  
+      
+    The feature documentation presents more detailed information about our
+    defined endpoints.  
+      
+    If you have any questions, we're available at
+    [support+developer@calendly.com](support+developer@calendly.com) to assist.
+
+
+    To quickly submit feedback or request more functionality, please fill out
+    our [API Feedback Survey](https://calendlydesign.typeform.com/to/eDE4BJCP).
+  version: 2.0.0
+  title: Calendly API
+  contact:
+    email: support+developer@calendly.com
+    name: Calendly Developer Support
+    url: 'https://developer.calendly.com'
+tags:
+  - name: Users
+  - name: Event Types
+  - name: Scheduled Events
+paths:
+  '/scheduled_events/{uuid}/invitees':
+    get:
+      summary: Get List of Event Invitees
+      tags:
+        - Scheduled Events
+      security:
+        - oauth2: []
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum:
+              - active
+              - canceled
+          description: Whether the invitee has `canceled` or is still `active`
+        - name: sort
+          in: query
+          schema:
+            type: string
+            default: 'created_at:asc'
+          description: >-
+            Order results by the specified field and direction. Supported fields
+            are: `created_at`.
+        - name: email
+          in: query
+          schema:
+            type: string
+            format: email
+            example: bob@example.com
+          description: Filter by email
+        - $ref: '#/components/parameters/PageToken'
+        - $ref: '#/components/parameters/Count'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Service response
+                properties:
+                  collection:
+                    type: array
+                    description: The set of event invitees matching the criteria
+                    items:
+                      $ref: '#/components/schemas/Invitee'
+                  pagination:
+                    $ref: ../common/models/pagination/pagination.yaml
+        '400':
+          $ref: '#/components/responses/INVALID_ARGUMENT'
+        '401':
+          $ref: '#/components/responses/UNAUTHENTICATED'
+        '403':
+          $ref: '#/components/responses/PERMISSION_DENIED'
+        '404':
+          $ref: '#/components/responses/NOT_FOUND'
+        '500':
+          $ref: '#/components/responses/UNKNOWN'
+      description: Returns all invitees for the specified scheduled event.
+      operationId: getInvitees
+  /scheduled_events:
+    get:
+      summary: Get List of User Events
+      description: Returns all events for a User who is assigned as event publisher.
+      tags:
+        - Scheduled Events
+      security:
+        - oauth2: []
+      parameters:
+        - name: user
+          in: query
+          schema:
+            type: string
+            format: uri
+            example: 'https://api.calendly.com/users/EBHAAFHDCAEQTSEZ'
+          description: Return events scheduled with the specified User
+          required: true
+        - name: invitee_email
+          in: query
+          schema:
+            type: string
+            format: email
+            example: alice@example.com
+          description: Return events scheduled with the specified invitee email
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum:
+              - active
+              - canceled
+          description: Whether the scheduled event is `active` or `canceled`
+        - name: sort
+          in: query
+          schema:
+            type: string
+          description: >-
+            Order results by the specified field and direction. Accepts
+            comma-separated list of {field}:{direction} values.
+
+            Supported fields are: start_time.
+
+            Sort direction is specified as: asc, desc.
+          example: 'start_time:asc'
+        - name: min_start_time
+          in: query
+          schema:
+            type: string
+          description: Lower bound (inclusive) for an event's start time to filter by.
+          example: '2020-01-02T12:30:00Z'
+        - name: max_start_time
+          in: query
+          schema:
+            type: string
+          description: Upper bound (inclusive) for an event's start time to filter by.
+          example: '2020-01-02T12:30:00Z'
+        - $ref: '#/components/parameters/PageToken'
+        - $ref: '#/components/parameters/Count'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Service response
+                properties:
+                  collection:
+                    type: array
+                    description: The set of scheduled events matching the criteria
+                    items:
+                      $ref: '#/components/schemas/Event'
+                  pagination:
+                    $ref: ../common/models/pagination/pagination.yaml
+        '400':
+          $ref: '#/components/responses/INVALID_ARGUMENT'
+        '401':
+          $ref: '#/components/responses/UNAUTHENTICATED'
+        '403':
+          $ref: '#/components/responses/PERMISSION_DENIED'
+        '404':
+          $ref: '#/components/responses/NOT_FOUND'
+        '500':
+          $ref: '#/components/responses/UNKNOWN'
+      operationId: getScheduledEvents
+    parameters: []
+  /event_types:
+    get:
+      summary: User Event Types
+      description: >-
+        Returns all Event Types associated with a specified User.
+
+
+        Event Types contain the most important configurations in Calendly. If
+        you need some basic information about your event types, you can use this
+        endpoint.
+      tags:
+        - Event Types
+      security:
+        - oauth2: []
+      parameters:
+        - name: user
+          description: >-
+            View event types available for the specified user (user URI). This
+            includes personal, teams', and organization event types.
+          in: query
+          schema:
+            type: string
+            format: uri
+          required: true
+        - name: sort
+          in: query
+          schema:
+            type: string
+            default: 'name:asc'
+          description: >-
+            Order results by the specified field and direction. Accepts
+            comma-separated list of {field}:{direction} values.
+
+            Supported fields are: name.
+
+            Sort direction is specified as: asc, desc.
+          examples:
+            withOmittedDirection:
+              summary: Omit direction with fallback to asc by default
+              value: name
+        - $ref: '#/components/parameters/PageToken'
+        - $ref: '#/components/parameters/Count'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Service response
+                properties:
+                  collection:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/EventType'
+                  pagination:
+                    $ref: ../common/models/pagination/pagination.yaml
+                required:
+                  - collection
+                  - pagination
+        '400':
+          $ref: '#/components/responses/INVALID_ARGUMENT'
+        '401':
+          $ref: '#/components/responses/UNAUTHENTICATED'
+        '403':
+          $ref: '#/components/responses/PERMISSION_DENIED'
+        '404':
+          $ref: '#/components/responses/NOT_FOUND'
+        '500':
+          $ref: '#/components/responses/UNKNOWN'
+      operationId: getEventTypes
+    parameters: []
+  '/users/{uuid}':
+    get:
+      summary: Get basic information about a user
+      tags:
+        - Users
+      security:
+        - oauth2: []
+      parameters:
+        - name: uuid
+          in: path
+          description: 'User unique identifier, or the constant "me" to reference the caller'
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Service response
+                properties:
+                  resource:
+                    $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/UNAUTHENTICATED'
+        '403':
+          $ref: '#/components/responses/PERMISSION_DENIED'
+        '404':
+          $ref: '#/components/responses/NOT_FOUND'
+        '500':
+          $ref: '#/components/responses/UNKNOWN'
+      description: Returns basic information about the specified user.
+      operationId: getUser
+  '/scheduled_events/{event_uuid}/invitees/{invitee_uuid}':
+    parameters:
+      - schema:
+          type: string
+        name: event_uuid
+        in: path
+        required: true
+      - schema:
+          type: string
+        name: invitee_uuid
+        in: path
+        required: true
+    get:
+      summary: Get Invitee of an Event
+      tags:
+        - Scheduled Events
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  'resource:':
+                    $ref: '#/components/schemas/Invitee'
+        '400':
+          $ref: '#/components/responses/INVALID_ARGUMENT'
+        '401':
+          $ref: '#/components/responses/UNAUTHENTICATED'
+        '403':
+          $ref: '#/components/responses/PERMISSION_DENIED'
+        '404':
+          $ref: '#/components/responses/NOT_FOUND'
+        '500':
+          $ref: '#/components/responses/UNKNOWN'
+      operationId: get-scheduled_events-event_uuid-invitees-invitee_uuid
+      security:
+        - oauth2: []
+      description: Returns a single Invitee by their URI.
+  '/scheduled_events/{uuid}':
+    parameters:
+      - schema:
+          type: string
+        name: uuid
+        in: path
+        required: true
+    get:
+      summary: Get Event
+      tags:
+        - Scheduled Events
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resource:
+                    $ref: '#/components/schemas/Event'
+        '401':
+          $ref: '#/components/responses/UNAUTHENTICATED'
+        '403':
+          $ref: '#/components/responses/PERMISSION_DENIED'
+        '404':
+          $ref: '#/components/responses/NOT_FOUND'
+        '500':
+          $ref: '#/components/responses/UNKNOWN'
+      operationId: get-scheduled_events-uuid
+      security:
+        - oauth2: []
+      description: Returns a single Event by its URI.
+  '/event_types/{uuid}':
+    parameters:
+      - schema:
+          type: string
+        name: uuid
+        in: path
+        required: true
+    get:
+      summary: Get Event Type
+      tags:
+        - Event Types
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resource:
+                    $ref: '#/components/schemas/EventType'
+        '400':
+          $ref: '#/components/responses/INVALID_ARGUMENT'
+        '401':
+          $ref: '#/components/responses/UNAUTHENTICATED'
+        '403':
+          $ref: '#/components/responses/PERMISSION_DENIED'
+        '500':
+          $ref: '#/components/responses/UNKNOWN'
+      operationId: get-event_types-uuid
+      security:
+        - oauth2: []
+      description: |-
+        <!-- theme: info -->
+        > This endpoint hasn't been released yet.
+
+        Returns a single Event Type by its URI.
+  '/organizations/{uuid}/invitations':
+    parameters:
+      - schema:
+          type: string
+        name: uuid
+        in: path
+        required: true
+        description: Organization id
+    get:
+      summary: Get Organization Invitations
+      tags:
+        - Organizations
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  collection:
+                    type: array
+                    items:
+                      $ref: >-
+                        ../common/models/organizations/organizationinvitation.yaml
+                  pagination:
+                    $ref: ../common/models/pagination/pagination.yaml
+        '400':
+          $ref: '#/components/responses/INVALID_ARGUMENT'
+        '401':
+          $ref: '#/components/responses/UNAUTHENTICATED'
+        '403':
+          $ref: '#/components/responses/PERMISSION_DENIED'
+        '404':
+          $ref: '#/components/responses/NOT_FOUND'
+        '500':
+          $ref: '#/components/responses/UNKNOWN'
+      operationId: get-organizations-uuid-invitations
+      description: Get a list of organization invitations.
+      security:
+        - oauth2: []
+      parameters:
+        - $ref: '#/components/parameters/Count'
+        - $ref: '#/components/parameters/PageToken'
+        - schema:
+            type: string
+            default: 'created_at:asc'
+          in: query
+          name: sort
+          description: >-
+            Order results by the specified field and direction. Supported fields
+            are: `created_at`.
+        - schema:
+            type: string
+            format: email
+            example: bob@example.com
+          in: query
+          name: email
+          description: Filter by email
+        - schema:
+            type: string
+            enum:
+              - pending
+              - accepted
+              - declined
+          in: query
+          name: status
+          description: Filter by status
+    post:
+      summary: Invite a person to Organization
+      tags:
+        - Organizations
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resource:
+                    $ref: ../common/models/organizations/organizationinvitation.yaml
+              examples:
+                Invitation:
+                  value:
+                    created_at: '2020-01-01T20:30:00Z'
+                    email: email@example.com
+                    last_sent_at: '2020-01-01T20:30:00Z'
+                    organization: 'https://api.calendly.com/organizations/ABCDABCDABCDABCD'
+                    status: pending
+                    updated_at: '2020-01-01T20:30:00Z'
+                    uri: >-
+                      https://api.calendly.com/organizations/ABCDABCDABCDABCD/invitations/DCBADCBADCBADCBA
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: ../common/models/errorresponse.yaml
+              examples:
+                Email is Invalid:
+                  value:
+                    title: Invalid Email
+                    message: invalid_email@example is an invalid email format
+                Email is Blank:
+                  value:
+                    title: Invalid Argument
+                    message: The supplied parameters are invalid.
+                    details:
+                      - parameter: email
+                        message: must be filled
+                Email Exists in Organization:
+                  value:
+                    title: Already Organization Member
+                    message: email@example.com is already in the organization
+                Invitation Already Exists:
+                  value:
+                    title: Already Invited
+                    message: email@example.com has already been invited
+                Quantity Overflow:
+                  value:
+                    title: Please Upgrade Your Account to Send More Invitations
+                    message: >-
+                      You already sent all the invitations you’re allotted based
+                      upon the number of seats purchased with your account.
+                      Please purchase more seats to send more invitations.
+                Trial Quantity Overflow:
+                  value:
+                    title: Please Upgrade Your Account to Send More Invitations
+                    message: >-
+                      You already sent all the invitations allotted to you with
+                      a trial account.
+                Race Condition:
+                  value:
+                    title: Race Condition
+                    message: >-
+                      A race condition occurred when processing the request. 
+                      Please try the request again.
+        '401':
+          $ref: '#/components/responses/UNAUTHENTICATED'
+        '403':
+          $ref: '#/components/responses/PERMISSION_DENIED'
+        '404':
+          $ref: '#/components/responses/NOT_FOUND'
+        '500':
+          $ref: '#/components/responses/UNKNOWN'
+      operationId: post-organizations-uuid-invitations
+      description: Invite a person to an Organization.
+      security:
+        - oauth2: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+              properties:
+                email:
+                  type: string
+                  description: Email of the person being invited
+                  format: email
+                  example: alice@example.com
+  '/organizations/{org_uuid}/invitations/{uuid}':
+    parameters:
+      - schema:
+          type: string
+        name: org_uuid
+        in: path
+        required: true
+        description: Organization id
+      - schema:
+          type: string
+        name: uuid
+        in: path
+        description: Organization Invitation id
+        required: true
+    delete:
+      summary: Revoke Organization Invitation
+      tags:
+        - Organizations
+      responses:
+        '204':
+          description: No Content
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: ../common/models/errorresponse.yaml
+              examples:
+                Invitation Already Accepted:
+                  value:
+                    title: Invitation Already Accepted
+                    message: The invitation has already been accepted.
+        '401':
+          $ref: '#/components/responses/UNAUTHENTICATED'
+        '403':
+          $ref: '#/components/responses/PERMISSION_DENIED'
+        '404':
+          $ref: '#/components/responses/NOT_FOUND'
+        '500':
+          $ref: '#/components/responses/UNKNOWN'
+      operationId: delete-organizations-org_uuid-invitations-uuid
+      description: >-
+        Revoke an organization invitation. The invitation link sent to the
+        person will no longer be valid.
+      security:
+        - oauth2: []
+    get:
+      summary: Get Organization Invitation
+      operationId: get-organizations-org_uuid-invitations-uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resource:
+                    $ref: ../common/models/organizations/organizationinvitation.yaml
+        '400':
+          $ref: '#/components/responses/INVALID_ARGUMENT'
+        '401':
+          $ref: '#/components/responses/UNAUTHENTICATED'
+        '403':
+          $ref: '#/components/responses/PERMISSION_DENIED'
+        '404':
+          $ref: '#/components/responses/NOT_FOUND'
+        '500':
+          $ref: '#/components/responses/UNKNOWN'
+      description: Returns an Organization Invitation
+      security:
+        - oauth2: []
+      tags:
+        - Organizations
+  '/organization_memberships/{uuid}':
+    get:
+      summary: Get Organization Membership
+      tags:
+        - Organizations
+      security:
+        - oauth2: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resource:
+                    $ref: '#/components/schemas/OrganizationMembership'
+        '400':
+          $ref: '#/components/responses/INVALID_ARGUMENT'
+        '401':
+          $ref: '#/components/responses/UNAUTHENTICATED'
+        '403':
+          description: Caller not authorized to perform this action
+          content:
+            application/json:
+              schema:
+                $ref: ../common/models/errorresponse.yaml
+              examples:
+                User belongs to another organization:
+                  value:
+                    title: Permission Denied
+                    message: This user is not in your organization
+        '404':
+          $ref: '#/components/responses/NOT_FOUND'
+        '500':
+          $ref: '#/components/responses/UNKNOWN'
+      description: Returns information about a user's organization membership
+    delete:
+      summary: Remove a User from an Organization
+      tags:
+        - Organizations
+      operationId: delete-organizations-uuid-memberships
+      responses:
+        '204':
+          description: No Content
+        '400':
+          $ref: '#/components/responses/INVALID_ARGUMENT'
+        '401':
+          $ref: '#/components/responses/UNAUTHENTICATED'
+        '403':
+          description: Caller not authorized to perform this action
+          content:
+            application/json:
+              schema:
+                $ref: ../common/models/errorresponse.yaml
+              examples:
+                Caller's Role is User:
+                  value:
+                    title: Permission Denied
+                    message: You do not have permission to perform this action
+                Member is Owner:
+                  value:
+                    title: Permission Denied
+                    message: You can not change owner role
+                Member is the caller's account:
+                  value:
+                    title: Permission Denied
+                    message: You can not remove yourself from organization
+                Member belongs to another Organization:
+                  value:
+                    title: Permission Denied
+                    message: You cannot modify members from another organization
+        '404':
+          $ref: '#/components/responses/NOT_FOUND'
+        '500':
+          $ref: '#/components/responses/UNKNOWN'
+      description: >-
+        Notes:
+
+
+        * The caller should have admin rights in the specified organization in
+        order to remove users.
+
+        * An organization owner cannot be removed
+      security:
+        - oauth2: []
+    parameters:
+      - schema:
+          type: string
+        name: uuid
+        in: path
+        required: true
+        description: Organization Membership id
+  /organization_memberships:
+    get:
+      summary: Get a list of Organization Memberships
+      tags:
+        - Organizations
+      security:
+        - oauth2: []
+      parameters:
+        - $ref: '#/components/parameters/PageToken'
+        - $ref: '#/components/parameters/Count'
+        - schema:
+            type: string
+            format: email
+            example: user@example.com
+          in: query
+          name: email
+          description: Filter by user email
+        - schema:
+            type: string
+            format: uri
+            example: 'https://api.calendly.com/organizations/012345678901234567890'
+          in: query
+          name: organization
+          description: Filter by organization
+        - schema:
+            type: string
+            example: 'https://api.calendly.com/users/012345678901234567890'
+            format: uri
+          in: query
+          name: user
+          description: Filter by user
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Service response
+                properties:
+                  collection:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/OrganizationMembership'
+                  pagination:
+                    $ref: ../common/models/pagination/pagination.yaml
+        '400':
+          $ref: '#/components/responses/INVALID_ARGUMENT'
+        '401':
+          $ref: '#/components/responses/UNAUTHENTICATED'
+        '403':
+          description: Caller not authorized to perform this action
+          content:
+            application/json:
+              schema:
+                $ref: ../common/models/errorresponse.yaml
+              examples:
+                User belongs to another organization:
+                  value:
+                    title: Permission Denied
+                    message: This user is not in your organization
+        '404':
+          $ref: '#/components/responses/NOT_FOUND'
+        '500':
+          $ref: '#/components/responses/UNKNOWN'
+      description: >-
+        Use this resource to list memberships of all users belonging to an
+        organization.
+
+
+        The `user` parameter is useful to look up an organization that a given
+        user is a member of.
+
+
+        The `organization` parameter is useful to look up all users who belong
+        to a given organization.
+
+
+        You have to pass either `user` or `organization` parameter.
+    parameters: []
+  /webhook_subscriptions:
+    post:
+      summary: Create User Webhook Subscription
+      operationId: post-users-uuid-webhooks
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resource:
+                    $ref: ../common/models/webhooksubscription.yaml
+        '400':
+          $ref: '#/components/responses/INVALID_ARGUMENT'
+        '401':
+          $ref: '#/components/responses/UNAUTHENTICATED'
+        '403':
+          $ref: '#/components/responses/PERMISSION_DENIED'
+        '404':
+          $ref: '#/components/responses/NOT_FOUND'
+        '409':
+          description: Attempt to create a resource that already exists
+          content:
+            application/json:
+              examples:
+                URL Already Exists:
+                  value:
+                    title: Already Exists
+                    message: Hook with this url already exists
+              schema:
+                allOf:
+                  - $ref: ../common/models/errorresponse.yaml
+                  - type: object
+                    properties:
+                      title:
+                        type: string
+                        enum:
+                          - Already Exists
+                      message:
+                        type: string
+                        enum:
+                          - Hook with this url already exists
+      description: >-
+        <!-- theme: info -->
+
+        > This endpoint hasn't been released yet.
+
+
+        Create a new webhook subscription for either the organization or user
+        provided.
+      tags:
+        - Webhooks
+      security:
+        - oauth2: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                url:
+                  type: string
+                  description: Callback URL when event(s) are fired
+                  format: uri
+                events:
+                  type: array
+                  description: >-
+                    List of user events to subscribe to. Valid events include
+                    'invitee.created' and 'invitee.canceled'.
+                  uniqueItems: true
+                  items:
+                    type: string
+                    enum:
+                      - invitee.canceled
+                      - invitee.created
+                organization:
+                  type: string
+                  description: >-
+                    Organization URI for the organization that the webhook will
+                    be tied to.
+                  format: uri
+                user:
+                  type: string
+                  description: User URI for the user that the webhook will be tied to.
+                  format: uri
+                scope:
+                  type: string
+                  enum:
+                    - organization
+                    - user
+                  description: >-
+                    Whether the webhook subscription will be created for the
+                    global 'organization' or for a specific 'user' within an
+                    organization
+              required:
+                - url
+                - events
+                - organization
+                - scope
+            examples:
+              User Scope Webhook:
+                value:
+                  url: 'https://blah.foo/bar'
+                  events:
+                    - invitee.created
+                    - invitee.canceled
+                  organization: 'https://api.calendly.com/organizations/AAAAAAAAAAAAAAAA'
+                  user: 'https://api.calendly.com/users/BBBBBBBBBBBBBBBB'
+                  scope: user
+              Organization Scope Webhook:
+                value:
+                  url: 'https://blah.foo/bar'
+                  events:
+                    - invitee.created
+                    - invitee.canceled
+                  organization: 'https://api.calendly.com/organizations/AAAAAAAAAAAAAAAA'
+                  scope: organization
+        description: ''
+      parameters: []
+    parameters: []
+  '/webhook_subscriptions/{webhook_uuid}':
+    parameters:
+      - schema:
+          type: string
+        name: webhook_uuid
+        description: Webhook subscription id
+        in: path
+        required: true
+    get:
+      summary: Get Webhook Subscription
+      tags:
+        - Webhooks
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resource:
+                    $ref: ../common/models/webhooksubscription.yaml
+        '401':
+          $ref: '#/components/responses/UNAUTHENTICATED'
+        '403':
+          $ref: '#/components/responses/PERMISSION_DENIED'
+        '404':
+          $ref: '#/components/responses/NOT_FOUND'
+      operationId: get-users-user_uuid-webhooks-webhook_uuid
+      description: >-
+        Get a webhook subscription matching the provided UUID for the webhook
+        subscription
+      security:
+        - oauth2: []
+components:
+  securitySchemes:
+    oauth2:
+      type: oauth2
+      flows:
+        authorizationCode:
+          authorizationUrl: 'https://auth.calendly.com/oauth/authorize'
+          tokenUrl: 'https://auth.calendly.com/oauth/token'
+          scopes: {}
+          refreshUrl: 'https://auth.calendly.com/oauth/token'
+  schemas:
+    User:
+      type: object
+      description: Primary account details of a specific user.
+      properties:
+        uri:
+          type: string
+          format: uri
+          description: Canonical resource reference
+          example: 'https://api.calendly.com/users/012345678901234567890'
+        name:
+          type: string
+          description: User's human-readable name
+        slug:
+          type: string
+          description: Unique readable value used in page URL
+        email:
+          type: string
+          format: email
+          description: User's email address
+        scheduling_url:
+          type: string
+          format: uri
+          description: URL of user's event page
+        timezone:
+          type: string
+          example: America/New York
+          description: Timezone offest to use when presenting time information to user
+        avatar_url:
+          type: string
+          nullable: true
+          format: uri
+          description: URL of user's avatar image
+          example: >-
+            https://01234567890.cloudfront.net/uploads/user/avatar/0123456/a1b2c3d4.png
+        created_at:
+          type: string
+          format: date-time
+          example: '2019-01-02T03:04:05.678Z'
+          description: Moment when user record was first created
+        updated_at:
+          type: string
+          format: date-time
+          example: '2019-08-07T06:05:04.321Z'
+          description: Moment when user record was last updated
+      required:
+        - uri
+        - name
+        - slug
+        - email
+        - scheduling_url
+        - timezone
+        - avatar_url
+        - created_at
+        - updated_at
+    Organization:
+      type: object
+      properties:
+        uri:
+          type: string
+          format: uri
+          description: Canonical resource reference
+          example: 'https://api.calendly.com/organizations/012345678901234567890'
+    Event:
+      type: object
+      description: A meeting that has been scheduled
+      properties:
+        uri:
+          type: string
+          format: uri
+          description: Canonical resource reference
+        name:
+          type: string
+          nullable: true
+          description: Name of the event
+        status:
+          type: string
+          enum:
+            - active
+            - canceled
+          description: Whether the event is `active` or `canceled`
+        start_time:
+          type: string
+          format: date-time
+          description: Moment when event is (or was) scheduled to begin
+        end_time:
+          type: string
+          format: date-time
+          description: Moment when event is (or was) scheduled to end
+        event_type:
+          type: string
+          description: Reference to Event Type associated with this event
+          format: uri
+          example: 'https://api.calendly.com/event_types/GBGBDCAADAEDCRZ2'
+        location:
+          $ref: '#/components/schemas/Location'
+        invitees_counter:
+          type: object
+          required:
+            - total
+            - active
+            - limit
+          properties:
+            total:
+              type: number
+            active:
+              type: number
+            limit:
+              type: number
+        created_at:
+          type: string
+          format: date-time
+          description: Moment when the event was initially created
+          example: '2019-01-02T03:04:05.678Z'
+        updated_at:
+          type: string
+          format: date-time
+          description: Moment when the event was last updated
+          example: '2019-01-02T03:04:05.678Z'
+      required:
+        - uri
+        - name
+        - status
+        - start_time
+        - end_time
+        - event_type
+        - location
+        - invitees_counter
+        - created_at
+        - updated_at
+    Location:
+      description: >-
+        [IN-DEVELOPMENT] This field is currently in development and may not
+        return the documented values below. Polymorphic base type for the
+        various supported meeting locations
+      nullable: true
+      discriminator:
+        propertyName: kind
+        mapping:
+          physical: InPersonMeeting
+          outbound_call: OutboundCall
+          inbound_call: InboundCall
+          google_conference: GoogleConference
+          zoom_conference: ZoomConference
+          gotomeeting_conference: GotoMeetingConference
+          custom: CustomLocation
+          ask_invitee: InviteeSpecifiedLocation
+      oneOf:
+        - $ref: '#/components/schemas/InPersonMeeting'
+        - $ref: '#/components/schemas/OutboundCall'
+        - $ref: '#/components/schemas/InboundCall'
+        - $ref: '#/components/schemas/GoogleConference'
+        - $ref: '#/components/schemas/ZoomConference'
+        - $ref: '#/components/schemas/GotoMeetingConference'
+        - $ref: '#/components/schemas/CustomLocation'
+        - $ref: '#/components/schemas/InviteeSpecifiedLocation'
+    InPersonMeeting:
+      description: A meeting at a pre-specified physical location
+      type: object
+      properties:
+        kind:
+          type: string
+          enum:
+            - physical
+        location:
+          description: A physical location specified by the meeting publisher
+          type: string
+      required:
+        - kind
+        - location
+    OutboundCall:
+      description: Meeting publisher will call the invitee
+      type: object
+      properties:
+        kind:
+          type: string
+          enum:
+            - outbound_call
+      required:
+        - kind
+    InboundCall:
+      description: Invitee will call meeting publisher at the specified phone number
+      type: object
+      properties:
+        kind:
+          type: string
+          enum:
+            - inbound_call
+        phone_number:
+          description: Phone number invitee should use to reach meeting publisher
+          type: string
+      required:
+        - kind
+        - phone_number
+    GoogleConference:
+      description: Meeting will take place in a Google Meet / Hangout conference
+      type: object
+      properties:
+        kind:
+          type: string
+          enum:
+            - google_conference
+      required:
+        - kind
+    ZoomConference:
+      description: Meeting will take place in a Zoom conference
+      type: object
+      properties:
+        kind:
+          type: string
+          enum:
+            - zoom_conference
+        external_id:
+          description: Zoom-supplied conference id
+          type: string
+        state:
+          description: Current state of the conference in Zoom
+          type: string
+          enum:
+            - initiated
+            - pushed
+            - processing
+            - failed
+        data:
+          description: Arbitrary conference metadata supplied by Zoom
+          type: object
+      required:
+        - kind
+        - external_id
+        - state
+        - data
+    GotoMeetingConference:
+      description: Meeting will take place in a GotoMeeting conference
+      type: object
+      properties:
+        kind:
+          type: string
+          enum:
+            - gotomeeting_conference
+        external_id:
+          description: GotoMeeting-supplied conference id
+          type: string
+        state:
+          description: Current state of the conference in GotoMeeting
+          type: string
+          enum:
+            - initiated
+            - pushed
+            - processing
+            - failed
+        data:
+          description: Arbitrary conference metadata supplied by GotoMeeting
+          type: object
+      required:
+        - kind
+        - external_id
+        - state
+        - data
+    CustomLocation:
+      description: >-
+        Meeting location does not fall in a standard category, and is as
+        described by the meeting publisher
+      type: object
+      properties:
+        kind:
+          type: string
+          enum:
+            - custom
+        location:
+          description: Location description provided by meeting publisher
+          type: string
+      required:
+        - kind
+        - location
+    InviteeSpecifiedLocation:
+      description: Meeting location was specified by invitee
+      type: object
+      properties:
+        kind:
+          type: string
+          enum:
+            - ask_invitee
+        location:
+          description: Location description provided by invitee
+          type: string
+      required:
+        - kind
+        - location
+    EventType:
+      type: object
+      description: A configuration for a schedulable event
+      properties:
+        uri:
+          description: Canonical resource reference
+          type: string
+          format: uri
+          example: 'https://api.calendly.com/event-types/012345678901234567890'
+        name:
+          description: 'Human-readable name. Note: some Event Types don''t have a name'
+          type: string
+          example: Sample Event Type
+          nullable: true
+        active:
+          description: Is this event type currently active?
+          type: boolean
+        slug:
+          description: Unique human-readable slug used in page URL
+          type: string
+          nullable: true
+          example: sample-event-type
+        scheduling_url:
+          description: |
+            The full URL of the web page for this event type
+          type: string
+          format: uri
+          example: 'https://calendly.com/calendly-user/sample-event-type'
+        duration:
+          description: Length of event type in minutes
+          type: number
+          example: 30
+        kind:
+          description: |
+            Whether the event type is “solo” or with a “group”
+          type: string
+          enum:
+            - solo
+            - group
+        pooling_type:
+          description: >
+            Whether the event type is "round_robin" or "collective". This value
+            is null if the event type does not pool team members' availability.
+          type: string
+          nullable: true
+          enum:
+            - round_robin
+            - collective
+        type:
+          description: >
+            Whether the event type is a “StandardEventType” or an
+            "AdhocEventType”
+          type: string
+          enum:
+            - StandardEventType
+            - AdhocEventType
+        color:
+          description: >
+            The web page styling color for this event type, expressed as a
+            hexadecimal RGB value (e.g. #fa12e4)
+          type: string
+          pattern: '^#[a-f\d]{6}$'
+          example: '#fff200'
+        created_at:
+          description: >
+            Moment when event type was eventually created (e.g.
+            “2019-01-02T03:04:05.678Z“)
+          type: string
+          format: date-time
+          example: '2019-01-02T03:04:05.678Z'
+        updated_at:
+          description: >
+            Moment when event type was last updated (e.g.
+            “2019-01-02T03:04:05.678Z“)
+          type: string
+          format: date-time
+          example: '2019-08-07T06:05:04.321Z'
+        internal_note:
+          type: string
+          description: Optional internal note on an event type
+          nullable: true
+        description_plain:
+          description: Longer text description in plain text
+          type: string
+          nullable: true
+        description_html:
+          description: Longer text description with HTML formatting
+          type: string
+          nullable: true
+        profile:
+          $ref: '#/components/schemas/Profile'
+      required:
+        - uri
+        - name
+        - active
+        - slug
+        - scheduling_url
+        - duration
+        - kind
+        - pooling_type
+        - type
+        - color
+        - created_at
+        - updated_at
+        - internal_note
+        - description_plain
+        - description_html
+        - profile
+    Profile:
+      type: object
+      nullable: true
+      description: >-
+        A profile associated with an Event Type. Note that some Event Types do
+        not have a profile.
+      properties:
+        type:
+          type: string
+          description: Whether the profile belongs to a “User” or a “Team”
+          enum:
+            - User
+            - Team
+        name:
+          type: string
+          description: Human-readable name
+          example: Tamara Jones
+        owner:
+          type: string
+          description: Reference to the profile owner
+          format: uri
+          example: 'https://api.calendly.com/users/ABC123'
+      required:
+        - type
+        - name
+        - owner
+    Invitee:
+      type: object
+      description: An individual who has been invited to meet with a Calendly member
+      properties:
+        uri:
+          type: string
+          format: uri
+          description: Canonical resource reference
+        email:
+          type: string
+          format: email
+          description: The invitee's email address
+        name:
+          type: string
+          description: The invitee's human-readable name
+        status:
+          type: string
+          enum:
+            - active
+            - canceled
+          description: Whether the invitee has `canceled` or is still `active`
+        questions_and_answers:
+          type: array
+          description: A collection of form responses from the invitee
+          minItems: 0
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/InviteeQuestionAndAnswer'
+        timezone:
+          type: string
+          description: Timezone offest to use when presenting time information to invitee
+        event:
+          type: string
+          format: uri
+          description: Reference to the Event
+          example: 'https://api.calendly.com/scheduled_events/ABC123'
+        created_at:
+          type: string
+          format: date-time
+          example: '2019-01-02T03:04:05.678Z'
+          description: Moment when record was first created
+        updated_at:
+          type: string
+          format: date-time
+          example: '2019-08-07T06:05:04.321Z'
+          description: Moment when record was last updated
+        tracking:
+          $ref: '#/components/schemas/InviteeTracking'
+        text_reminder_number:
+          type: string
+          nullable: true
+          example: +1 404-555-1234
+          description: Text (SMS) reminder phone number
+      required:
+        - uri
+        - email
+        - status
+        - event
+        - created_at
+        - updated_at
+        - tracking
+        - text_reminder_number
+    OrganizationMembership:
+      type: object
+      properties:
+        uri:
+          type: string
+          format: uri
+          description: Canonical resource reference
+          example: 'https://api.calendly.com/organization_memberships/ABC123'
+        role:
+          type: string
+          description: User's role within the organization
+          enum:
+            - user
+            - admin
+            - owner
+        user:
+          $ref: '#/components/schemas/User'
+        organization:
+          type: string
+          format: uri
+          description: Reference to the organization
+          example: 'https://api.calendly.com/organizations/012345678901234567890'
+        updated_at:
+          type: string
+          format: date-time
+          example: '2019-08-07T06:05:04.321Z'
+          description: Moment when record was last updated
+        created_at:
+          type: string
+          format: date-time
+          example: '2019-01-02T03:04:05.678Z'
+          description: Moment when record was first created
+      required:
+        - uri
+        - role
+        - user
+        - organization
+        - updated_at
+        - created_at
+    InviteeQuestionAndAnswer:
+      title: InviteeQuestionAndAnswer
+      type: object
+      x-examples:
+        Checkbox Answer Type:
+          answer: |-
+            Answer 1
+            Answer 2
+            Answer 3
+          position: 0
+          question: Question 1
+        Multiple Lines Answer Type:
+          answer: |-
+            Multiple line
+            Answer
+          position: 1
+          question: Question 2
+        Phone Number Answer Type:
+          answer: +1 234-567-8910
+          position: 2
+          question: Question 3
+      description: An individual form question and response
+      properties:
+        question:
+          type: string
+          description: The question from the event booking confirmation form
+        answer:
+          type: string
+          description: The answer supplied by the invitee to this question
+        position:
+          type: number
+          description: The position of this question in the event booking confirmation form
+      required:
+        - question
+        - answer
+        - position
+    InviteeTracking:
+      title: InviteeTracking
+      type: object
+      x-examples:
+        InviteeTracking:
+          utm_campaign: UTM Campaign
+          utm_source: UTM Source
+          utm_medium: UTM Medium
+          utm_content: UTM Content
+          utm_term: UTM Term
+          salesforce_uuid: 5003000000D8cuIQAA
+      description: >-
+        Object that represents UTM and Salesforce tracking parameters associated
+        with the invitee
+      properties:
+        utm_campaign:
+          type: string
+          nullable: true
+          description: UTM campaign tracking parameter
+        utm_source:
+          type: string
+          nullable: true
+          description: UTM source tracking parameter
+        utm_medium:
+          type: string
+          nullable: true
+          description: UTM medium tracking parameter
+        utm_content:
+          type: string
+          nullable: true
+          description: UTM content tracking parameter
+        utm_term:
+          type: string
+          nullable: true
+          description: UTM term tracking parameter
+        salesforce_uuid:
+          type: string
+          nullable: true
+          description: Salesforce Record ID
+      required:
+        - utm_campaign
+        - utm_source
+        - utm_medium
+        - utm_content
+        - utm_term
+        - salesforce_uuid
+  responses:
+    INVALID_ARGUMENT:
+      description: Request is not valid
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: ../common/models/errorresponse.yaml
+              - type: object
+                properties:
+                  title:
+                    type: string
+                    enum:
+                      - Invalid Argument
+                  message:
+                    type: string
+                    enum:
+                      - The supplied parameters are invalid.
+    UNAUTHENTICATED:
+      description: Cannot authenticate caller
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: ../common/models/errorresponse.yaml
+              - type: object
+                properties:
+                  title:
+                    type: string
+                    enum:
+                      - Unauthenticated
+                  message:
+                    type: string
+                    enum:
+                      - The access token is invalid
+                      - The access token expired
+                      - The access token was revoked
+    PERMISSION_DENIED:
+      description: Caller not authorized to perform this action
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: ../common/models/errorresponse.yaml
+              - type: object
+                properties:
+                  title:
+                    type: string
+                    enum:
+                      - Permission Denied
+                  message:
+                    type: string
+                    enum:
+                      - This user is not in your organization
+                      - You do not have permission
+                      - You do not have permission to access this resource.
+                      - You are not allowed to view this event
+                      - Please upgrade your Calendly account to Premium
+    NOT_FOUND:
+      description: Requested resource not found
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: ../common/models/errorresponse.yaml
+              - type: object
+                properties:
+                  title:
+                    type: string
+                    enum:
+                      - Resource Not Found
+                  message:
+                    type: string
+                    enum:
+                      - The server could not find the requested resource.
+    UNKNOWN:
+      description: An error has occurred on the server
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: ../common/models/errorresponse.yaml
+              - type: object
+                properties:
+                  title:
+                    type: string
+                    enum:
+                      - Internal Server Error
+                  message:
+                    type: string
+                    enum:
+                      - >-
+                        The server encountered an unexpected condition that
+                        prevented it from fulfilling the request.
+    ALREADY_EXISTS:
+      description: Attempt to create a resource that already exists
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: ../common/models/errorresponse.yaml
+              - type: object
+                properties:
+                  title:
+                    type: string
+                    enum:
+                      - Already Exists
+                  message:
+                    type: string
+                    enum:
+                      - The resource already exists
+  parameters:
+    Count:
+      name: count
+      description: Number of rows to return.
+      in: query
+      schema:
+        type: number
+        default: 20
+        minimum: 1
+    PageToken:
+      name: page_token
+      description: >-
+        Pass this to get the next portion of collection. Can be sent exclusively
+        with required parameters only.
+      in: query
+      schema:
+        type: string
